@@ -98,11 +98,30 @@ def do_kmeans(cc_mat):
     return kmeans.fit_predict(cc_mat)
 
 
+def write_to_ascii(voxel_coords_filename, clusters, output_ascii_filename, dimx, dimy, dimz):
+    # load up coord file
+    coords = {}
+    for line in open(voxel_coords_filename):
+        pline = [x for x in line.strip().split(" ") if len(x)>0]
+        if int(pline[3])!=0: raise Exception("Only supports t=0")
+        coords["%s-%s-%s" % (pline[0], pline[1], pline[2])] = str(clusters[int(pline[4])-1]+1)
+
+
+    # write output file
+    writer = open(output_ascii_filename, "w")
+    for z in xrange(dimz):
+        for y in xrange(dimy):
+            to_write = [coords["%s-%s-%s" % (x, y, z)] if "%s-%s-%s" % (x, y, z) in coords else "0" for x in xrange(dimx)]
+            writer.write(" ".join(to_write)+"\n")
+    writer.close()
+
+
+
 def run(options, args):
-    cache_filename = corr_matrix_cache_filename(options.filename, options.samples, options.threshold, options.max_seed_voxels, options.max_target_voxels)
+    cache_filename = corr_matrix_cache_filename(options.conn_mat_filename, options.samples, options.threshold, options.max_seed_voxels, options.max_target_voxels)
     
     if not os.path.exists(cache_filename):
-        mat = sparse_matrix_from_dotfile(options.filename, options.samples, options.threshold, options.max_seed_voxels, options.max_target_voxels)
+        mat = sparse_matrix_from_dotfile(options.conn_mat_filename, options.samples, options.threshold, options.max_seed_voxels, options.max_target_voxels)
         cc_mat = cross_correlate_matrix(mat)
 
         # Saving cached version
@@ -115,27 +134,42 @@ def run(options, args):
     if options.display_corr_matrix:
         pylab.imshow(cc_mat)
         pylab.show()
+    
+    else:
+        print " > Running k-means..."
+        clusters = do_kmeans(cc_mat)
+        print clusters
+        print " > Writing ascii matrix file to: %s" % options.ascii_out_filename
+        dimx = 91
+        dimy = 109
+        dimz = 91
+        write_to_ascii(options.voxel_coords_filename, clusters, options.ascii_out_filename, dimx, dimy, dimz)
+
 
 
 if __name__=="__main__":
     parser = OptionParser()
-    parser.add_option("-f", "--file", dest="filename",
-                              help="connectivity matrix FILE")
+    parser.add_option("", "--conn-mat-file", dest="conn_mat_filename",
+                              help="connectivity matrix filename")
+    parser.add_option("", "--voxel-coords-file", dest="voxel_coords_filename",
+                              help="voxel coordinates filename")
+    parser.add_option("", "--ascii-out-file", dest="ascii_out_filename",
+                              help="ascii matrix output filename")
     parser.add_option("-s", "--samples", dest="samples", default=0, type="int",
                               help="number of samples (ie number of streamlines started for each voxel)")
     parser.add_option("-t", "--threshold", dest="threshold", default=0, type="float",
                               help="Consider tracts connected if P(connected) > THRESHOLD %, where P(connected)=matrix_value/samples")
-    
+
     parser.add_option("", "--max-seed-voxels", dest="max_seed_voxels", default=0, type="int",
                               help="Limit the number of seed voxels used to the first N")
     parser.add_option("", "--max-target-voxels", dest="max_target_voxels", default=0, type="int",
                               help="Limit the number of target voxels used to the first N")
-    
+
     parser.add_option("", "--display-corr-matrix", action="store_true", dest="display_corr_matrix")
 
     (options, args) = parser.parse_args()
 
-    if not options.filename:
+    if not options.conn_mat_filename:
         raise Exception("Must specify filename. Run with --help for instructions.")
 
     run(options, args)
