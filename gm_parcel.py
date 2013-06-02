@@ -1,7 +1,9 @@
 
-import os, math
+import os, math, time
 from optparse import OptionParser
+from sklearn.cluster import KMeans
 import scipy.sparse as S
+import pylab
 import numpy as N
 
 
@@ -10,10 +12,6 @@ def corr_matrix_cache_filename(filename, samples=0, threshold=0, max_seed_voxels
 
 
 def sparse_matrix_from_dotfile(filename, samples, threshold, max_seed_voxels=0, max_target_voxels=0):
-    """
-    threshold
-    """
-    
     has_max_sv = max_seed_voxels > 0
     has_max_tv = max_target_voxels > 0
 
@@ -70,14 +68,14 @@ def sparse_matrix_from_dotfile(filename, samples, threshold, max_seed_voxels=0, 
 def cross_correlate_matrix(mat):
     # Cache the norm of all vectors
     print " > Computing norms..."
-    norms = [N.sqrt(mat[i].multiply(mat[i]).sum(1)) for i in xrange(len(mat))]
-    if any((math.isnan(x) for x in norms)): raise Exception("No norm can be NaN!")
+    # because the value of each cell is always going to be 1, we can simplify
+    # sqrt(mat[i].multiply(mat[i]).sum(1)) = sqrt(len(mat[i].nonzero()))
+    norms = [N.sqrt(len(mat[i].nonzero())) for i in xrange(len(mat))]
 
     # Calculate cross correlation
     cc_mat = N.zeros((len(mat), len(mat)))
 
     print " > Computing cross-correlation matrix..."
-    import time
     for i in xrange(len(mat)):
         print "%d/%d at %s" % (i, len(mat), time.ctime())
         num_nan = 0
@@ -95,6 +93,10 @@ def cross_correlate_matrix(mat):
     return cc_mat
 
 
+def do_kmeans(cc_mat):
+    kmeans = KMeans(init='k-means++', n_clusters=2, n_init=10)
+    return kmeans.fit_predict(cc_mat)
+
 
 def run(options, args):
     cache_filename = corr_matrix_cache_filename(options.filename, options.samples, options.threshold, options.max_seed_voxels, options.max_target_voxels)
@@ -107,8 +109,12 @@ def run(options, args):
         print " > Caching cross-correlation matrix to: %s" % cache_filename
         N.save(cache_filename, cc_mat)
 
-    print "wouhou!"
+    else:
+        cc_mat = N.load(cache_filename)
 
+    if options.display_corr_matrix:
+        pylab.imshow(cc_mat)
+        pylab.show()
 
 
 if __name__=="__main__":
@@ -124,6 +130,8 @@ if __name__=="__main__":
                               help="Limit the number of seed voxels used to the first N")
     parser.add_option("", "--max-target-voxels", dest="max_target_voxels", default=0, type="int",
                               help="Limit the number of target voxels used to the first N")
+    
+    parser.add_option("", "--display-corr-matrix", action="store_true", dest="display_corr_matrix")
 
     (options, args) = parser.parse_args()
 
