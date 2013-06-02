@@ -93,9 +93,29 @@ def cross_correlate_matrix(mat):
     return cc_mat
 
 
-def do_kmeans(cc_mat):
-    kmeans = KMeans(init='k-means++', n_clusters=2, n_init=10)
-    return kmeans.fit_predict(cc_mat)
+def do_kmeans(cc_mat, num_clusters, keep_top=1):
+    kmeans = KMeans(init='k-means++', n_clusters=num_clusters, n_init=10)
+    fitted = kmeans.fit(cc_mat)
+    dist_from_clusters = fitted.transform(cc_mat)
+    memberships = fitted.predict(cc_mat)
+
+    # For each cluster, keep only top KEEP_TOP elements
+    for cid in xrange(num_clusters):
+        num_thresholded = 0
+        c_members = N.where(memberships==cid)[0]
+        
+        c_distances = N.sort( [dist_from_clusters[i][cid] for i in c_members] )
+        num_to_keep = N.floor(keep_top * len(c_members))
+        threshold_value = c_distances[-num_to_keep]
+
+        for i in c_members:
+            if dist_from_clusters[i][cid] < threshold_value:
+                num_thresholded += 1
+                memberships[i] = -1
+
+        print "   For cluster %d, %d/%d values were removed due to thresholding" % (cid, num_thresholded, len(c_members))
+
+    return memberships
 
 
 def write_to_ascii(voxel_coords_filename, clusters, output_ascii_filename, dimx, dimy, dimz):
@@ -104,7 +124,13 @@ def write_to_ascii(voxel_coords_filename, clusters, output_ascii_filename, dimx,
     for line in open(voxel_coords_filename):
         pline = [x for x in line.strip().split(" ") if len(x)>0]
         if int(pline[3])!=0: raise Exception("Only supports t=0")
-        coords["%s-%s-%s" % (pline[0], pline[1], pline[2])] = str(clusters[int(pline[4])-1]+1)
+
+        # check to see if we have thresholded out this voxel when doing
+        # k-means. in that case, its value will be -1
+        cluster_value = clusters[int(pline[4])-1]
+        if cluster_value == -1: continue
+
+        coords["%s-%s-%s" % (pline[0], pline[1], pline[2])] = str(cluster_value+1)
 
 
     # write output file
@@ -137,7 +163,9 @@ def run(options, args):
     
     else:
         print " > Running k-means..."
-        clusters = do_kmeans(cc_mat)
+        if options.kmeans_keep_only <= 0 or options.kmeans_keep_only>1:
+            raise Exception("kmeans-keep-only needs to be 0<x<=1")
+        clusters = do_kmeans(cc_mat, options.num_clusters, options.kmeans_keep_only)
         print clusters
         print " > Writing ascii matrix file to: %s" % options.ascii_out_filename
         dimx = 91
@@ -155,6 +183,10 @@ if __name__=="__main__":
                               help="voxel coordinates filename")
     parser.add_option("", "--ascii-out-file", dest="ascii_out_filename",
                               help="ascii matrix output filename")
+    parser.add_option("-c", "--clusters", dest="num_clusters", default=2, type="int",
+                              help="number of k-means clusters")
+    parser.add_option("", "--kmeans-keep-only", dest="kmeans_keep_only", default=1.0, type="float",
+                              help="after having done k-means, only keep closest KMEAN-KEEP-ONLY % of cluster members")
     parser.add_option("-s", "--samples", dest="samples", default=0, type="int",
                               help="number of samples (ie number of streamlines started for each voxel)")
     parser.add_option("-t", "--threshold", dest="threshold", default=0, type="float",
