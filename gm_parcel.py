@@ -1,3 +1,22 @@
+#!/usr/bin/env python
+#
+# gm_parcel.py
+# Copyright (C) 2013 Francois Maillet, Martha Shiell
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+#
 
 import os, math, time
 from optparse import OptionParser
@@ -94,7 +113,7 @@ def cross_correlate_matrix(mat):
 
 
 def do_kmeans(cc_mat, num_clusters, keep_top=1):
-    kmeans = KMeans(init='k-means++', n_clusters=num_clusters, n_init=10)
+    kmeans = KMeans(init='k-means++', n_clusters=num_clusters, n_init=25, precompute_distances=True, max_iter=2500)
     fitted = kmeans.fit(cc_mat)
     dist_from_clusters = fitted.transform(cc_mat)
     memberships = fitted.predict(cc_mat)
