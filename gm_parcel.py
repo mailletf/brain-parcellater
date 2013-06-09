@@ -91,6 +91,8 @@ if __name__=="__main__":
     parser.add_option("-t", "--threshold", dest="threshold", default=0, type="float",
                               help="Consider tracts connected if P(connected) > THRESHOLD %, where P(connected)=matrix_value/samples")
 
+    parser.add_option("", "--no-binarize", dest="binarize", default=True, action="store_false",
+                              help="Do not binarise input sparse matrix")
     parser.add_option("", "--max-seed-voxels", dest="max_seed_voxels", default=0, type="int",
                               help="Limit the number of seed voxels used to the first N")
     parser.add_option("", "--max-target-voxels", dest="max_target_voxels", default=0, type="int",

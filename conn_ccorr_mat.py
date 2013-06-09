@@ -24,11 +24,11 @@ import pylab
 import numpy as N
 
 
-def corr_matrix_cache_filename(filename, samples=0, threshold=0, max_seed_voxels=0, max_target_voxels=0):
-    return "%s_%d_%0.4f_%d_%d.npy" % (filename, samples, threshold, max_seed_voxels, max_target_voxels)
+def corr_matrix_cache_filename(filename, samples=0, threshold=0, max_seed_voxels=0, max_target_voxels=0, binarize=True):
+    return "%s_%d_%0.4f_%d_%d_%d.npy" % (filename, samples, threshold, max_seed_voxels, max_target_voxels, binarize)
 
 
-def sparse_matrix_from_dotfile(filename, samples, threshold, max_seed_voxels=0, max_target_voxels=0):
+def sparse_matrix_from_dotfile(filename, samples, threshold, max_seed_voxels=0, max_target_voxels=0, binarize=True):
     has_max_sv = max_seed_voxels > 0
     has_max_tv = max_target_voxels > 0
 
@@ -70,8 +70,7 @@ def sparse_matrix_from_dotfile(filename, samples, threshold, max_seed_voxels=0, 
                 num_skipped_threshold += 1
                 continue
 
-            # Set all values to one
-            mat[sv-1][0,tv-1] = 1
+            mat[sv-1][0,tv-1] = 1 if binarize else v
 
         except Exception as e:
             print e
@@ -82,11 +81,10 @@ def sparse_matrix_from_dotfile(filename, samples, threshold, max_seed_voxels=0, 
     return mat
 
 
-def cross_correlate_matrix2(mat):
+def cross_correlate_matrix_binary(mat):
     # Cache the norm of all vectors
     print " > Computing norms..."
     # because the value of each cell is always going to be 1, we can simplify
-    # sqrt(mat[i].multiply(mat[i]).sum(1)) = sqrt(len(mat[i].nonzero()))
     norms = [N.sqrt(len(mat[i].nonzero())) for i in xrange(len(mat))]
 
     # Calculate cross correlation
@@ -112,17 +110,14 @@ def cross_correlate_matrix2(mat):
 
 
 
-def cross_correlate_matrix(mat):
+def cross_correlate_matrix_nonbinary(mat):
     # Cache the norm of all vectors
     print " > Computing norms..."
     # because the value of each cell is always going to be 1, we can simplify
-    # sqrt(mat[i].multiply(mat[i]).sum(1)) = sqrt(len(mat[i].nonzero()))
-    norms = [N.sqrt(len(mat[i].nonzero())) for i in xrange(len(mat))]
+    norms = [ N.sqrt(mat[i].multiply(mat[i]).sum(1)) for i in xrange(len(mat)) ]
 
     # Calculate cross correlation
     cc_mat = N.zeros((len(mat), len(mat)))
-
-    mat2 = [ set([y[1] for y in x.keys()]) for x in mat ]
 
     print " > Computing cross-correlation matrix..."
     for i in xrange(len(mat)):
@@ -143,11 +138,14 @@ def cross_correlate_matrix(mat):
 
 
 def get_ccmat(options, args):
-    cache_filename = corr_matrix_cache_filename(options.conn_mat_filename, options.samples, options.threshold, options.max_seed_voxels, options.max_target_voxels)
+    cache_filename = corr_matrix_cache_filename(options.conn_mat_filename, options.samples, options.threshold, options.max_seed_voxels, options.max_target_voxels, options.binarize)
     
     if not os.path.exists(cache_filename):
-        mat = sparse_matrix_from_dotfile(options.conn_mat_filename, options.samples, options.threshold, options.max_seed_voxels, options.max_target_voxels)
-        cc_mat = cross_correlate_matrix2(mat)
+        mat = sparse_matrix_from_dotfile(options.conn_mat_filename, options.samples, options.threshold, options.max_seed_voxels, options.max_target_voxels, options.binarize)
+        if options.binarize:
+            cc_mat = cross_correlate_matrix_binary(mat)
+        else:
+            cc_mat = cross_correlate_matrix_nonbinary(mat)
 
         # Saving cached version
         print " > Caching cross-correlation matrix to: %s" % cache_filename
