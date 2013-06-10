@@ -82,16 +82,18 @@ def sparse_matrix_from_dotfile(filename, samples, threshold, max_seed_voxels=0, 
 
 
 def cross_correlate_matrix_binary(mat):
+    # Create set-representation of matrix
+    mat2 = [ set([y[1] for y in x.keys()]) for x in mat ]
+
     # Cache the norm of all vectors
     print " > Computing norms..."
     # because the value of each cell is always going to be 1, we can simplify
-    norms = [N.sqrt(len(mat[i].nonzero())) for i in xrange(len(mat))]
+    norms = [N.sqrt(len(mat2[i])) for i in xrange(len(mat2))]
 
     # Calculate cross correlation
     cc_mat = N.zeros((len(mat), len(mat)))
 
-    mat2 = [ set([y[1] for y in x.keys()]) for x in mat ]
-    
+
     for i in xrange(len(mat)):
         print "%d/%d at %s" % (i, len(mat), time.ctime())
         num_nan = 0
