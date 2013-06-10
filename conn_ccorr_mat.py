@@ -17,7 +17,7 @@
 #
 
 import os, math, time
-from optparse import OptionParser
+from optparse import OptionGroup
 from sklearn.cluster import KMeans
 import scipy.sparse as S
 import pylab
@@ -158,5 +158,27 @@ def get_ccmat(options, args):
         cc_mat = N.load(cache_filename)
 
     return cc_mat
+
+def get_option_parser_group(parser):
+
+    group = OptionGroup(parser, "Connection & correlation matrices options")
+
+    group.add_option("", "--conn-mat-file", dest="conn_mat_filename",
+                              help="connectivity matrix filename")
+    group.add_option("", "--voxel-coords-file", dest="voxel_coords_filename",
+                              help="voxel coordinates filename")
+    group.add_option("-s", "--samples", dest="samples", default=0, type="int",
+                              help="number of samples (ie number of streamlines started for each voxel)")
+    group.add_option("-t", "--threshold", dest="threshold", default=0, type="float",
+                              help="Consider tracts connected if P(connected) > THRESHOLD %, where P(connected)=matrix_value/samples")
+
+    group.add_option("", "--no-binarize", dest="binarize", default=True, action="store_false",
+                              help="Do not binarise input sparse matrix")
+    group.add_option("", "--max-seed-voxels", dest="max_seed_voxels", default=0, type="int",
+                              help="Limit the number of seed voxels used to the first N")
+    group.add_option("", "--max-target-voxels", dest="max_target_voxels", default=0, type="int",
+                              help="Limit the number of target voxels used to the first N")
+    group.add_option("", "--display-corr-matrix", action="store_true", dest="display_corr_matrix")
+    return group
 
 

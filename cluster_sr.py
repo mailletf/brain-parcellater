@@ -45,23 +45,8 @@ def run(options, args):
 
 if __name__=="__main__":
     parser = OptionParser()
-    parser.add_option("", "--conn-mat-file", dest="conn_mat_filename",
-                              help="connectivity matrix filename")
-    parser.add_option("", "--voxel-coords-file", dest="voxel_coords_filename",
-                              help="voxel coordinates filename")
-    parser.add_option("", "--ascii-out-file", dest="ascii_out_filename",
-                              help="ascii matrix output filename")
-    parser.add_option("-s", "--samples", dest="samples", default=0, type="int",
-                              help="number of samples (ie number of streamlines started for each voxel)")
-    parser.add_option("-t", "--threshold", dest="threshold", default=0, type="float",
-                              help="Consider tracts connected if P(connected) > THRESHOLD %, where P(connected)=matrix_value/samples")
-
-    parser.add_option("", "--max-seed-voxels", dest="max_seed_voxels", default=0, type="int",
-                              help="Limit the number of seed voxels used to the first N")
-    parser.add_option("", "--max-target-voxels", dest="max_target_voxels", default=0, type="int",
-                              help="Limit the number of target voxels used to the first N")
-
-    parser.add_option("", "--display-corr-matrix", action="store_true", dest="display_corr_matrix")
+    
+    parser.add_option_group(CC.get_option_parser_group(parser))
 
     (options, args) = parser.parse_args()
 
