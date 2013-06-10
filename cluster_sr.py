@@ -10,14 +10,14 @@ import io_util as io
 def do_spec_reorder(B):
     C = B + 1
 
+    # calculate the laplacian directly
     Q = -C
     for i in xrange(Q.shape[0]):
-        Q[i,i] = -(N.sum(Q[i,:]) + Q[i,i])
-    
+        Q[i,i] = -(N.sum(Q[i,:]) - Q[i,i])
+
     t = N.zeros(Q.shape)
-    for i in xrange(len(Q)):
-        for j in xrange(len(Q)):
-            t[i,j] = 1.0 / N.sqrt( N.sum(C[:,j]) )
+    for j in xrange(len(Q)):
+        t[:,j] = 1.0 / N.sqrt( N.sum(C[:,j]) )
 
     D = t * Q * t
 
@@ -29,13 +29,23 @@ def do_spec_reorder(B):
     v2 = t.dot(v)
     
     permutation_vector = N.argsort(v2)
-    print permutation_vector
-    print B[permutation_vector]
+
+    permutation_vector_rev = list(permutation_vector)
+    permutation_vector_rev.reverse()
+    permutation_vector_rev = N.asarray(permutation_vector_rev)
     
+    #print permutation_vector
+    #print permutation_vector_rev
+    #print B[permutation_vector]
+   
     pylab.imshow(B)
     pylab.show()
     pylab.imshow(B[permutation_vector])
     pylab.show()
+
+    pylab.imshow(B[permutation_vector_rev])
+    pylab.show()
+
 
 
 def run(options, args):
