@@ -30,21 +30,26 @@ def do_spec_reorder(B):
     
     permutation_vector = N.argsort(v2)
 
-    permutation_vector_rev = list(permutation_vector)
-    permutation_vector_rev.reverse()
-    permutation_vector_rev = N.asarray(permutation_vector_rev)
+    #permutation_vector_rev = list(permutation_vector)
+    #permutation_vector_rev.reverse()
+    #permutation_vector_rev = N.asarray(permutation_vector_rev)
     
     #print permutation_vector
     #print permutation_vector_rev
     #print B[permutation_vector]
-   
-    pylab.imshow(B)
-    pylab.show()
-    pylab.imshow(B[permutation_vector])
+  
+    fig = pylab.figure()
+    f1 = fig.add_subplot(1,2,1)
+    #f1.set_title(text="Cross-correlation matrix")
+    f1.imshow(B, interpolation="nearest")
+    
+    f2 = fig.add_subplot(1,2,2)
+    #f2.set_title(text="Spectral reordering")
+    f2.imshow(B[permutation_vector], interpolation="nearest")
     pylab.show()
 
-    pylab.imshow(B[permutation_vector_rev])
-    pylab.show()
+    #pylab.imshow(B[permutation_vector_rev])
+    #pylab.show()
 
 
 
