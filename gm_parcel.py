@@ -53,6 +53,16 @@ def do_kmeans(cc_mat, num_clusters, keep_top=1):
     return memberships
 
 
+def show_kmeans_clusters(cc_mat, clusters, num_clusters):
+    #  itemindex=numpy.where(array==item)
+    
+    f, axarr = pylab.subplots(num_clusters, 1, sharex=True)
+    for sp_idx, f in enumerate(axarr):
+        #f = fig.add_subplot((num_clusters, 1, sb_idx+1), sharex=True)
+        #f.set_title(text="Cross-correlation matrix")
+        f.imshow(cc_mat[N.where(clusters==sp_idx)[0]], interpolation="nearest")
+    
+    pylab.show()
 
 def run(options, args):
     cc_mat = CC.get_ccmat(options, args)
@@ -73,6 +83,9 @@ def run(options, args):
         dimz = 91
         io.write_to_ascii(options.voxel_coords_filename, clusters, options.ascii_out_filename, dimx, dimy, dimz)
 
+        if options.show_kmeans_clusters:
+            show_kmeans_clusters(cc_mat, clusters, options.num_clusters)
+
 
 if __name__=="__main__":
     parser = OptionParser()
@@ -82,6 +95,8 @@ if __name__=="__main__":
                               help="number of k-means clusters")
     parser.add_option("", "--kmeans-keep-only", dest="kmeans_keep_only", default=1.0, type="float",
                               help="after having done k-means, only keep closest KMEAN-KEEP-ONLY % of cluster members")
+    parser.add_option("", "--show-kmeans-clusters", dest="show_kmeans_clusters", default=False, action="store_true",
+                              help="show cross-correlation matrix rows grouped by kmeans clusters")
 
     parser.add_option_group(CC.get_option_parser_group(parser))
 
