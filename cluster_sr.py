@@ -2,54 +2,56 @@ import os, math, time
 from optparse import OptionParser
 import pylab
 import numpy as N
+import random
+
+
+from scipy.sparse.linalg import lobpcg
+from pyamg import smoothed_aggregation_solver
+#from helper import trimesh, graph_laplacian
 
 import conn_ccorr_mat as CC
 import io_util as io
 
+def get_fake_data():
+    m = N.zeros((50,50))
+    m[40:,:10] = 1
+    m[:10,40:] = 1
+    
+    indexes = range(len(m))
+    random.shuffle(indexes)
 
-def do_spec_reorder(B):
-    C = B + 1
+    return (m, indexes)
 
-    # calculate the laplacian directly
-    Q = -C
-    for i in xrange(Q.shape[0]):
-        Q[i,i] = -(N.sum(Q[i,:]) - Q[i,i])
+def do_spec_reorder(W):
+    D = N.zeros(W.shape)
+    for i in xrange(len(W)):
+        D[i,i] = N.sum(W[i,:])
 
-    t = N.zeros(Q.shape)
-    for j in xrange(len(Q)):
-        t[:,j] = 1.0 / N.sqrt( N.sum(C[:,j]) )
+    E = N.zeros(W.shape)
+    for i in xrange(len(D)):
+        E[i,i] = 1.0/N.sqrt(D[i,i])
 
-    D = t * Q * t
+    w2 = E.dot((D-W)).dot(E)
+
 
     # calcule eigenvalues and get the vector for the
     # 2nd smallest value
-    eigenvalues, eigenvectors = N.linalg.eig(D)
+    eigenvalues, eigenvectors = N.linalg.eig(w2)
     sorted_values = N.argsort(eigenvalues)
     v = eigenvectors[sorted_values[1]]
-    v2 = t.dot(v)
     
+    v2 = E.dot(v)
     permutation_vector = N.argsort(v2)
 
-    #permutation_vector_rev = list(permutation_vector)
-    #permutation_vector_rev.reverse()
-    #permutation_vector_rev = N.asarray(permutation_vector_rev)
-    
-    #print permutation_vector
-    #print permutation_vector_rev
-    #print B[permutation_vector]
-  
     fig = pylab.figure()
     f1 = fig.add_subplot(1,2,1)
     #f1.set_title(text="Cross-correlation matrix")
-    f1.imshow(B, interpolation="nearest")
-    
+    f1.imshow(W, interpolation="nearest")
+
     f2 = fig.add_subplot(1,2,2)
     #f2.set_title(text="Spectral reordering")
-    f2.imshow(B[permutation_vector], interpolation="nearest")
+    f2.imshow(W[permutation_vector], interpolation="nearest")
     pylab.show()
-
-    #pylab.imshow(B[permutation_vector_rev])
-    #pylab.show()
 
 
 
