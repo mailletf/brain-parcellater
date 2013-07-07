@@ -36,13 +36,13 @@ def do_spec_reorder(W):
 
     # calcule eigenvalues and get the vector for the
     # 2nd smallest value
-    eigenvalues, eigenvectors = N.linalg.eig(w2)
+    eigenvalues, eigenvectors = N.linalg.eigh(w2)
     sorted_values = N.argsort(eigenvalues)
-    v = eigenvectors[sorted_values[1]]
-    
+    v = eigenvectors[:, sorted_values[1]]
+
     v2 = E.dot(v)
     permutation_vector = N.argsort(v2)
-
+    
     fig = pylab.figure()
     f1 = fig.add_subplot(1,2,1)
     #f1.set_title(text="Cross-correlation matrix")
@@ -50,7 +50,9 @@ def do_spec_reorder(W):
 
     f2 = fig.add_subplot(1,2,2)
     #f2.set_title(text="Spectral reordering")
-    f2.imshow(W[permutation_vector], interpolation="nearest")
+    Wr1 = W[permutation_vector]
+    Wr1 = Wr1[:,permutation_vector]
+    f2.imshow(Wr1, interpolation="nearest")
     pylab.show()
 
 
