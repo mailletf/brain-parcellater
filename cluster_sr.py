@@ -6,7 +6,7 @@ import random
 
 
 from scipy.sparse.linalg import lobpcg
-from pyamg import smoothed_aggregation_solver
+#from pyamg import smoothed_aggregation_solver
 #from helper import trimesh, graph_laplacian
 
 import conn_ccorr_mat as CC

@@ -156,7 +156,7 @@ def get_ccmat(options, args):
 
     else:
         print " > Loading from cache: %s" % cache_filename
-        cc_mat =    dist_mat = N.load(cache_filename)
+        cc_mat = N.load(cache_filename)
 
     if options.euclidian_const_scale != 0:
         print " > Applying euclidan distance matrix with scale parameter: %0.2f" % options.euclidian_const_scale
