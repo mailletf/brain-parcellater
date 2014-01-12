@@ -19,7 +19,7 @@
 #
 
 import os, math, time
-from optparse import OptionParser
+from optparse import OptionParser, OptionGroup
 from sklearn.cluster import KMeans
 import pylab
 import numpy as N
@@ -78,10 +78,8 @@ def run(options, args):
         clusters = do_kmeans(cc_mat, options.num_clusters, options.kmeans_keep_only)
         print clusters
         print " > Writing ascii matrix file to: %s" % options.ascii_out_filename
-        dimx = 91
-        dimy = 109
-        dimz = 91
-        io.write_to_ascii(options.voxel_coords_filename, clusters, options.ascii_out_filename, dimx, dimy, dimz)
+        io.write_to_ascii(options.voxel_coords_filename, clusters, options.ascii_out_filename,
+                options.dimx, options.dimy, options.dimz)
 
         if options.show_kmeans_clusters:
             show_kmeans_clusters(cc_mat, clusters, options.num_clusters)
@@ -99,6 +97,15 @@ if __name__=="__main__":
                               help="show cross-correlation matrix rows grouped by kmeans clusters")
 
     parser.add_option_group(CC.get_option_parser_group(parser))
+    
+    group = OptionGroup(parser, "Dimension of the coordinate space")
+    group.add_option("-x", "--xdim", dest="dimx", default=91, type="int",
+                              help="x size. default for 2mm")
+    group.add_option("-y", "--ydim", dest="dimy", default=109, type="int",
+                              help="y size. default for 2mm")
+    group.add_option("-z", "--zdim", dest="dimz", default=91, type="int",
+                              help="z size. default for 2mm")
+    parser.add_option_group(group)
 
     (options, args) = parser.parse_args()
 
