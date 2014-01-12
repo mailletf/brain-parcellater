@@ -187,6 +187,8 @@ def get_seed_voxel_euclidian_dist_mat(options, args):
             dist_mat[i,j] = dist
             dist_mat[j,i] = dist
 
+    dist_mat /= N.max(dist_mat)
+
     print "     Max distance: %0.4f" % N.max(dist_mat)
     print "     Avg distance: %0.4f" % N.mean(dist_mat)
     print "    Done euclidian distance mat."
