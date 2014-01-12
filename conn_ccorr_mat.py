@@ -205,6 +205,8 @@ def get_option_parser_group(parser):
 
     group.add_option("", "--no-binarize", dest="binarize", default=True, action="store_false",
                               help="Do not binarise input sparse matrix")
+    group.add_option("", "--euclidian-const-scale", dest="euclidian_const_scale", default=0, type="float",
+                              help="Add distance constraint to cross corr matrix by adding scaled euclidian matrix before kmeans. This parameter is multiplied to euclidian dist matrix before adding it. 0=off.")
     group.add_option("", "--max-seed-voxels", dest="max_seed_voxels", default=0, type="int",
                               help="Limit the number of seed voxels used to the first N")
     group.add_option("", "--max-target-voxels", dest="max_target_voxels", default=0, type="int",
