@@ -19,6 +19,7 @@
 import os, math, time
 from optparse import OptionGroup
 from sklearn.cluster import KMeans
+from scipy.spatial.distance import euclidean
 import scipy.sparse as S
 import pylab
 import numpy as N
@@ -155,9 +156,39 @@ def get_ccmat(options, args):
 
     else:
         print " > Loading from cache: %s" % cache_filename
-        cc_mat = N.load(cache_filename)
+        cc_mat =    dist_mat = N.load(cache_filename)
+
+    if options.euclidian_const_scale != 0:
+        print " > Applying euclidan distance matrix with scale parameter: %0.2f" % options.euclidian_const_scale
+        dist_mat = get_seed_voxel_euclidian_dist_mat(options, args)
+        cc_mat = cc_mat + options.euclidian_const_scale * dist_mat
 
     return cc_mat
+
+
+def get_seed_voxel_euclidian_dist_mat(options, args):
+    print " > Computing euclidian distance matrix between seed voxels..."
+    # Load coords for all seed voxels
+    seed_coords = []
+    for line in open(options.voxel_coords_filename):
+        pline = [x for x in line.strip().split(" ") if len(x)>0]
+        seed_coords.append(N.asarray([int(pline[0]), int(pline[1]), int(pline[2])]))
+
+    dist_mat = N.zeros((len(seed_coords), len(seed_coords))) - 1
+    for i in xrange(len(dist_mat)):
+        for j in xrange(len(dist_mat)):
+            if dist_mat[i,j] != -1: continue
+            dist = euclidean(seed_coords[i], seed_coords[j])
+            dist_mat[i,j] = dist
+            dist_mat[j,i] = dist
+
+    print "     Max distance: %0.4f" % N.max(dist_mat)
+    print "     Avg distance: %0.4f" % N.mean(dist_mat)
+    import pdb
+    pdb.set_trace()
+    print "    Done euclidian distance mat."
+    return dist_mat
+
 
 def get_option_parser_group(parser):
 
@@ -178,7 +209,8 @@ def get_option_parser_group(parser):
                               help="Limit the number of seed voxels used to the first N")
     group.add_option("", "--max-target-voxels", dest="max_target_voxels", default=0, type="int",
                               help="Limit the number of target voxels used to the first N")
-    group.add_option("", "--display-corr-matrix", action="store_true", dest="display_corr_matrix")
+    group.add_option("", "--display-corr-matrix", action="store_true", dest="display_corr_matrix",
+                              help="Display the correlation matrix")
     return group
 
 
