@@ -159,13 +159,13 @@ def get_ccmat(options, args):
         cc_mat = N.load(cache_filename)
 
     if options.euclidian_const_scale != 0:
-       print "     Max val in cross-corr matrix: %0.4f" % N.max(cc_mat)
-       print "    Mean val in cross-corr matrix: %0.4f" % N.mean(cc_mat)
+        print "     Max val in cross-corr matrix: %0.4f" % N.max(cc_mat)
+        print "    Mean val in cross-corr matrix: %0.4f" % N.mean(cc_mat)
         print " > Applying euclidan distance matrix with scale parameter: %0.2f" % options.euclidian_const_scale
         dist_mat = get_seed_voxel_euclidian_dist_mat(options, args)
-       dist_mat *= options.euclidian_const_scale
-       print "     Max distance (post scale): %0.4f" % N.max(dist_mat)
-       print "     Avg distance (post scale): %0.4f" % N.mean(dist_mat)
+        dist_mat *= options.euclidian_const_scale
+        print "     Max distance (post scale): %0.4f" % N.max(dist_mat)
+        print "     Avg distance (post scale): %0.4f" % N.mean(dist_mat)
         cc_mat = cc_mat + dist_mat
 
     return cc_mat
