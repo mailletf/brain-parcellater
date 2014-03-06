@@ -20,7 +20,7 @@
 
 import os, math, time
 from optparse import OptionParser, OptionGroup
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans, spectral_clustering
 import pylab
 import numpy as N
 
@@ -55,14 +55,14 @@ def do_kmeans(cc_mat, num_clusters, keep_top=1):
 
 def show_kmeans_clusters(cc_mat, clusters, num_clusters):
     #  itemindex=numpy.where(array==item)
-    
     f, axarr = pylab.subplots(num_clusters, 1, sharex=True)
     for sp_idx, f in enumerate(axarr):
         #f = fig.add_subplot((num_clusters, 1, sb_idx+1), sharex=True)
         #f.set_title(text="Cross-correlation matrix")
         f.imshow(cc_mat[N.where(clusters==sp_idx)[0]], interpolation="nearest")
-    
+
     pylab.show()
+
 
 def run(options, args):
     cc_mat = CC.get_ccmat(options, args)
@@ -70,19 +70,26 @@ def run(options, args):
     if options.display_corr_matrix:
         pylab.imshow(cc_mat)
         pylab.show()
-    
-    else:
+        return
+
+    if options.clustering_algo == "kmeans":
         print " > Running k-means..."
         if options.kmeans_keep_only <= 0 or options.kmeans_keep_only>1:
             raise Exception("kmeans-keep-only needs to be 0<x<=1")
         clusters = do_kmeans(cc_mat, options.num_clusters, options.kmeans_keep_only)
-        print clusters
-        print " > Writing ascii matrix file to: %s" % options.ascii_out_filename
-        io.write_to_ascii(options.voxel_coords_filename, clusters, options.ascii_out_filename,
-                options.dimx, options.dimy, options.dimz)
 
-        if options.show_kmeans_clusters:
-            show_kmeans_clusters(cc_mat, clusters, options.num_clusters)
+    elif options.clustering_algo == "spectral":
+        clusters = spectral_clustering(cc_mat, n_clusters=options.num_clusters,
+            assign_labels="discretize")
+            #eigen_solver='arpack', assign_labels="discretize")
+
+    print clusters
+    print " > Writing ascii matrix file to: %s" % options.ascii_out_filename
+    io.write_to_ascii(options.voxel_coords_filename, clusters, options.ascii_out_filename,
+            options.dimx, options.dimy, options.dimz)
+
+    if options.show_clusters:
+        show_kmeans_clusters(cc_mat, clusters, options.num_clusters)
 
 
 if __name__=="__main__":
@@ -91,10 +98,17 @@ if __name__=="__main__":
                               help="ascii matrix output filename")
     parser.add_option("-c", "--clusters", dest="num_clusters", default=2, type="int",
                               help="number of k-means clusters")
-    parser.add_option("", "--kmeans-keep-only", dest="kmeans_keep_only", default=1.0, type="float",
+
+    parser.add_option("-a", "--algo", dest="clustering_algo", default="kmeans", type="choice",
+                              help="clustering algorithm to use", choices=["kmeans", "spectral"])
+    parser.add_option("", "--show-clusters", dest="show_clusters", default=False, action="store_true",
+                              help="show cross-correlation matrix rows grouped by clusters")
+
+
+    kmeans_group = OptionGroup(parser, "K-mean options")
+    kmeans_group.add_option("", "--kmeans-keep-only", dest="kmeans_keep_only", default=1.0, type="float",
                               help="after having done k-means, only keep closest KMEAN-KEEP-ONLY % of cluster members")
-    parser.add_option("", "--show-kmeans-clusters", dest="show_kmeans_clusters", default=False, action="store_true",
-                              help="show cross-correlation matrix rows grouped by kmeans clusters")
+    parser.add_option_group(kmeans_group)
 
     parser.add_option_group(CC.get_option_parser_group(parser))
     
