@@ -58,14 +58,12 @@ def write_to_surface_format(clusters, out_filename_prefix, label_filename):
     # open writers
     writers = []
     for c_idx in xrange(max(clusters)+1):
-        toutput_fn = "%s_c%d" % (out_filename_prefix, c_idx)
+        toutput_fn = "%s_c%d.label" % (out_filename_prefix, c_idx)
         print "  Opening writer: %s" % toutput_fn
-        writers.append(open(toutput_fn, "w"))
-
-    # writer headers
-    for w in writers:
-        for i in xrange(2):
-            w.write(label_lines[i])
+        w = open(toutput_fn, "w")
+        w.write(label_lines[0])
+        w.write("%d\n" % sum([1 for x in clusters if x==c_idx]))
+        writers.append(w)
 
     # for each seed voxel, write in correct output file based on its cluster value
     for seed_voxel, line_to_write in enumerate(label_lines[2:]):
