@@ -38,8 +38,11 @@ def sparse_matrix_from_dotfile(filename, samples, threshold, max_seed_voxels=0, 
 
     # Find max values for target and seed voxels to determine
     # how big the dense matrix would be
+    all_seeds = [ int(x[0]) for x in lines ]
+    num_seed_voxels = N.max(all_seeds)
+    all_seeds = set(all_seeds)
     num_target_voxels = N.max( [ int(x[2]) for x in lines ])
-    num_seed_voxels = N.max( [ int(x[0]) for x in lines ])
+
 
     # Find threshold value
     if threshold >= 1:
@@ -66,6 +69,12 @@ def sparse_matrix_from_dotfile(filename, samples, threshold, max_seed_voxels=0, 
             if has_max_tv and tv > num_target_voxels: break
             if has_max_sv and sv >= num_seed_voxels: continue
 
+            if sv in all_seeds:
+                all_seeds.remove(sv)
+
+            if v<=0:
+	       print "  Warning. Target voxel with value of %0.2f!    Seed:%d   Target:%d" % (v, sv, tv)
+
             # Make sure P(connected) is above threshold
             if v/samples < threshold:
                 num_skipped_threshold += 1
@@ -77,6 +86,10 @@ def sparse_matrix_from_dotfile(filename, samples, threshold, max_seed_voxels=0, 
             print e
             print sv, tv, v
             return
+
+    if len(all_seeds)>0:
+        print "  Warning the following seed voxels were absent from the sparse matrix file:"
+        print all_seeds
 
     print "    Skipped %d/%d due to thresholding" % (num_skipped_threshold, num_total)
     return mat
@@ -94,13 +107,19 @@ def cross_correlate_matrix_binary(mat):
     # Calculate cross correlation
     cc_mat = N.zeros((len(mat), len(mat)))
 
-
+    num_norm_zero = 0
     for i in xrange(len(mat)):
         print "%d/%d at %s" % (i, len(mat), time.ctime())
         num_nan = 0
         for j in xrange(len(mat)):
             if cc_mat[i,j] != 0: continue
-            cc_mat[i,j] = len(mat2[i].intersection(mat2[j])) / (norms[i] * norms[j])
+            
+            norm_mult = norms[i] * norms[j]
+            if norm_mult == 0:
+                num_norm_zero += 1
+                continue
+
+            cc_mat[i,j] = len(mat2[i].intersection(mat2[j])) / norm_mult
             if math.isnan(cc_mat[i,j]):
                 cc_mat[i,j] = 0
                 num_nan += 1
@@ -109,6 +128,7 @@ def cross_correlate_matrix_binary(mat):
         if num_nan>0:
             print "WARNING!! %d NaN values in the last line!" % num_nan
 
+    print "Skipped %d cells due to 0 norm" % num_norm_zero
     return cc_mat
 
 
@@ -118,7 +138,6 @@ def cross_correlate_matrix_nonbinary(mat):
     print " > Computing norms..."
     # because the value of each cell is always going to be 1, we can simplify
     norms = [ N.sqrt(mat[i].multiply(mat[i]).sum(1)) for i in xrange(len(mat)) ]
-
     # Calculate cross correlation
     cc_mat = N.zeros((len(mat), len(mat)))
 

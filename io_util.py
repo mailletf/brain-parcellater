@@ -21,6 +21,9 @@ def write_to_ascii(voxel_coords_filename, clusters, output_ascii_filename, dimx,
     coords = {}
     for line in open(voxel_coords_filename):
         pline = [x for x in line.strip().split(" ") if len(x)>0]
+        if len(pline) != 5:
+            print pline
+            raise Exception("Expected split line to be len 5. Got %d. Line: %s" % (len(pline), line))
         if int(pline[3])!=0: raise Exception("Only supports t=0")
 
         # check to see if we have thresholded out this voxel when doing
