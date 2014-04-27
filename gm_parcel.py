@@ -84,9 +84,12 @@ def run(options, args):
             #eigen_solver='arpack', assign_labels="discretize")
 
     print clusters
-    print " > Writing ascii matrix file to: %s" % options.ascii_out_filename
-    io.write_to_ascii(options.voxel_coords_filename, clusters, options.ascii_out_filename,
+    print " > Writing output file in '%s' format to: %s" % (options.out_format, options.out_filename)
+    if options.out_format == "vol":
+        io.write_to_ascii(options.voxel_coords_filename, clusters, options.out_filename,
             options.dimx, options.dimy, options.dimz)
+    elif options.out_format == "surf":
+        io.write_to_surface_format(clusters, options.out_filename, options.label_filename)
 
     if options.show_clusters:
         show_kmeans_clusters(cc_mat, clusters, options.num_clusters)
@@ -94,8 +97,12 @@ def run(options, args):
 
 if __name__=="__main__":
     parser = OptionParser()
-    parser.add_option("", "--ascii-out-file", dest="ascii_out_filename",
-                              help="ascii matrix output filename")
+    parser.add_option("", "--out-file", dest="out_filename",
+                              help="output filename")
+    parser.add_option("", "--label-file", dest="label_filename", default="",
+                              help="label filename to be reordered when outputing results in surface format")
+    parser.add_option("-o", "--out-format", dest="out_format", type="string",
+                              default="vol", help="output file format: vol, surf")
     parser.add_option("-c", "--clusters", dest="num_clusters", default=2, type="int",
                               help="number of k-means clusters")
 
@@ -122,6 +129,9 @@ if __name__=="__main__":
     parser.add_option_group(group)
 
     (options, args) = parser.parse_args()
+
+    if not options.out_format in ["vol", "surf"]:
+        raise Exception("Invalid output type '%s'" % options.out_format)
 
     if not options.conn_mat_filename:
         raise Exception("Must specify filename. Run with --help for instructions.")
