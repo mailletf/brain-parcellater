@@ -55,7 +55,7 @@ def write_to_surface_format(clusters, out_filename_prefix, label_filename):
 
     assert(len(label_lines)-2 == len(clusters))
 
-    # open writers
+    # open writers, one per cluster
     writers = []
     for c_idx in xrange(max(clusters)+1):
         toutput_fn = "%s_c%d.label" % (out_filename_prefix, c_idx)

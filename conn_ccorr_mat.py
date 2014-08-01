@@ -30,6 +30,11 @@ def corr_matrix_cache_filename(filename, samples=0, threshold=0, max_seed_voxels
 
 
 def sparse_matrix_from_dotfile(filename, samples, threshold, max_seed_voxels=0, max_target_voxels=0, binarize=True):
+    if threshold >= 1:
+        raise Exception("Threshold must be 0<t<1")
+    if samples==0:
+        raise Exception("Samples must be >0")
+
     has_max_sv = max_seed_voxels > 0
     has_max_tv = max_target_voxels > 0
 
@@ -42,13 +47,6 @@ def sparse_matrix_from_dotfile(filename, samples, threshold, max_seed_voxels=0, 
     num_seed_voxels = N.max(all_seeds)
     all_seeds = set(all_seeds)
     num_target_voxels = N.max( [ int(x[2]) for x in lines ])
-
-
-    # Find threshold value
-    if threshold >= 1:
-        raise Exception("Threshold must be 0<t<1")
-    if samples==0:
-        raise Exception("Samples must be >0")
 
 
     print " > Creating sparse matrix of dimensions %d x %d" % \
@@ -176,6 +174,17 @@ def get_ccmat(options, args):
     else:
         print " > Loading from cache: %s" % cache_filename
         cc_mat = N.load(cache_filename)
+
+    # if using subset, keep only the relevant parts of the cc_mat
+    if options.subset_label_filename != "":
+        all_labels = {line.split(" ")[0]: i-2 for (i, line) in enumerate(open(options.label_filename)) if i>1}
+        indexes_to_keep = [all_labels[line.split(" ")[0]] for (i, line) in enumerate(open(options.subset_label_filename)) if i>1]
+
+        print "\n --- Using subset ---"
+        print "  Keeping %d of %d seed voxels" % (len(indexes_to_keep), len(all_labels.keys()))
+        print " --------------------\n"
+        cc_mat = cc_mat[indexes_to_keep]
+
 
     if options.euclidian_const_scale != 0:
         print "     Max val in cross-corr matrix: %0.4f" % N.max(cc_mat)

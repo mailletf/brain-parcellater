@@ -89,7 +89,10 @@ def run(options, args):
         io.write_to_ascii(options.voxel_coords_filename, clusters, options.out_filename,
             options.dimx, options.dimy, options.dimz)
     elif options.out_format == "surf":
-        io.write_to_surface_format(clusters, options.out_filename, options.label_filename)
+        # if we're using a subset label file, we've only got a subset of the cc mat so use the smaller
+        # label file for the output
+        label_fn = options.label_filename if options.subset_label_filename == "" else options.subset_label_filename
+        io.write_to_surface_format(clusters, options.out_filename, label_fn)
 
     if options.show_clusters:
         show_kmeans_clusters(cc_mat, clusters, options.num_clusters)
@@ -101,6 +104,10 @@ if __name__=="__main__":
                               help="output filename")
     parser.add_option("", "--label-file", dest="label_filename", default="",
                               help="label filename to be reordered when outputing results in surface format")
+    parser.add_option("", "--subset-with-label-file", dest="subset_label_filename", default="",
+                              help="label filename to use as subset filter. needs to be used with --label-file. " + \
+                                      "only the seed voxels present in the subset label file will be used to create " + \
+                                      "the file output.")
     parser.add_option("-o", "--out-format", dest="out_format", type="string",
                               default="vol", help="output file format: vol, surf")
     parser.add_option("-c", "--clusters", dest="num_clusters", default=2, type="int",
@@ -135,6 +142,9 @@ if __name__=="__main__":
 
     if not options.conn_mat_filename:
         raise Exception("Must specify filename. Run with --help for instructions.")
+
+    if options.subset_label_filename != "" and options.label_filename == "":
+        raise Exception("When using subset-with-label-file, you also need to specify a label-file")
 
     run(options, args)
 
